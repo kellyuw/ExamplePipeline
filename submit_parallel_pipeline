@@ -1,0 +1,42 @@
+#!/bin/bash
+# usage: submit_parallel_pipeline bashscript subjectidnumbers....
+
+# there must be at least 2 arguments
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 [-g ]script subjectid1 subjectid2 ... subjectidn"
+  echo "[-g] optional - generate scripts but do not submit them"
+  exit 1
+fi
+
+# by default
+generateonly=0
+if [[ $1 =~ -g ]]
+then
+  generateonly=1
+  shift 1
+fi
+
+
+scriptname=`basename $1`
+scriptpath=$1
+logdir='/project_space/child_emotion/example_pipeline'
+mkdir -p $logdir # make directory if does not exist
+
+shift 1;
+until [ -z "$1" ]  # Until all parameters used up . . .
+do
+#  echo "subject $1 "
+  sed "s/SUBJECTID/$1/g" ${scriptpath} > $logdir/${1}/logfiles/job${1}_${scriptname}
+  chmod +x $logdir/${1}/logfiles/job${1}_${scriptname}
+  if [ $generateonly -eq 0 ]; then
+	qsub -cwd -V -S /bin/bash $logdir/${1}/logfiles/job${1}_${scriptname}
+  fi
+  shift
+done
+
+echo "All job scripts are located in $logdir"
+
+
+
+
+
